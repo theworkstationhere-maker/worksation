@@ -407,3 +407,145 @@ body.walking .sheet.walkok { display: block !important; z-index: 9; }
 .mapcredit { position: fixed; left: 6px; bottom: 2px; z-index: 5; max-width: calc(100% - 12px); font: 400 9px/1.3 system-ui, sans-serif; color: #fff; text-shadow: 0 1px 2px #0009; pointer-events: auto; opacity: .85; }
 .mapcredit a { color: #fff; }
 @media (max-width: 600px) { .mapcredit { font-size: 8px; } }
+
+/* ================================================================
+   Premium theme — calm, consistent, the world stays the focus.
+   One palette, one radius scale, one shadow scale; solid surfaces (no heavy blur, cheaper on phones).
+   ================================================================ */
+:root {
+  --ink: #18202c; --muted: #5d6675; --line: rgba(17, 24, 39, 0.09); --surface: rgba(255, 255, 255, 0.96); --surface-2: #f3f4f6;
+  --accent: #f28a12; --accent-dark: #d9750a; --accent-soft: #fff3e3; --amber: #b86a00;
+  --r-sm: 10px; --r-md: 14px; --r-lg: 20px;
+  --sh-1: 0 1px 2px rgba(16, 24, 40, 0.08), 0 4px 14px rgba(16, 24, 40, 0.10);
+  --sh-2: 0 2px 6px rgba(16, 24, 40, 0.10), 0 16px 40px rgba(16, 24, 40, 0.18);
+  --ui: -apple-system, BlinkMacSystemFont, "SF Pro Text", "Segoe UI", Inter, Roboto, "Helvetica Neue", sans-serif;
+}
+html, body { font-family: var(--ui); color: var(--ink); -webkit-font-smoothing: antialiased; }
+button, input, select { font-family: var(--ui); }
+.pill, .zoom button, .towncard, .search, .sheet, .modal .box, .tbox { backdrop-filter: none; -webkit-backdrop-filter: none; }
+
+/* top bar */
+.pill, .top .pill:not(.pop):not(.day):not(.fest), .leftbtns .pill, .brandrow .pill {
+  background: var(--surface); border: 1px solid var(--line); box-shadow: var(--sh-1);
+  border-radius: 999px; padding: 7px 13px; font-size: 13px; font-weight: 600; color: var(--ink);
+  transition: transform .15s var(--ease), box-shadow .15s, background .15s;
+}
+.pill:hover { transform: translateY(-1px); box-shadow: var(--sh-2); }
+.pill:active { transform: scale(.97); }
+.pill:focus-visible, .zoom button:focus-visible, .dock button:focus-visible, .grow:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+.brand { font: 700 16px Fredoka, var(--ui); letter-spacing: -0.01em; gap: 7px; }
+.brand img { width: 22px; height: 22px; }
+.langsel { font: 600 13px var(--ui); }
+.pill.day { background: var(--accent-soft); color: var(--amber); border-color: #f6dcb4; letter-spacing: .04em; }
+.pill.pop { background: var(--ink); color: #fff; border-color: transparent; }
+.night .pill#nightBtn { background: var(--ink); color: #fff; }
+.pill.fest { background: var(--accent-soft); color: var(--amber); border-color: #f6dcb4; animation: none; }
+.pill.fest.on { background: var(--ink); color: #fff; }
+
+/* search */
+.search { top: 60px; max-width: 520px; height: 44px; padding: 0 14px; border-radius: var(--r-md); background: var(--surface);
+  border: 1px solid var(--line); box-shadow: var(--sh-1); color: var(--muted); }
+.search:focus-within { border-color: var(--accent); box-shadow: 0 0 0 4px rgba(242, 138, 18, .16), var(--sh-1); color: var(--accent); }
+.search input { font-size: 15px; padding: 0; height: 100%; }
+.search input::placeholder { color: #8a93a1; }
+
+/* map controls: one quiet column */
+.zoom { gap: 8px; right: 14px; }
+.zoom button { width: 40px; height: 40px; border-radius: var(--r-sm); background: var(--surface); border: 1px solid var(--line);
+  box-shadow: var(--sh-1); color: var(--ink); font-size: 18px; font-weight: 600; transition: transform .15s var(--ease), background .15s; }
+.zoom button:hover { background: #fff; transform: translateY(-1px); }
+.zoom button:active { transform: scale(.95); }
+#tiltBtn { font-size: 13px; font-weight: 700; letter-spacing: .02em; }
+#viewPad { width: 44px; height: 44px; margin-left: -2px; border: 1px solid var(--line); background: var(--surface); box-shadow: var(--sh-1); }
+
+/* bottom toolbar */
+.dock { width: min(480px, calc(100% - 24px)); padding: 8px; border-radius: var(--r-lg); background: var(--surface);
+  border: 1px solid var(--line); box-shadow: var(--sh-2); backdrop-filter: none; -webkit-backdrop-filter: none; }
+.toprow .primary { height: 46px; padding: 0 16px; border-radius: var(--r-md); background: var(--accent); font: 600 16px var(--ui);
+  box-shadow: 0 1px 0 rgba(255,255,255,.25) inset, 0 4px 12px rgba(242, 138, 18, .28); }
+.toprow .primary:hover { background: var(--accent-dark); filter: none; }
+.walkbtn { height: 46px; border-radius: var(--r-md); background: #fff; border: 1px solid var(--line); box-shadow: none; font: 600 15px var(--ui); }
+.walkbtn:hover { background: var(--surface-2); }
+.dock .row { margin-top: 8px; gap: 4px; }
+.dock .row button { background: transparent; border: 0; border-radius: var(--r-sm); padding: 7px 2px 6px; font: 600 11.5px var(--ui); color: var(--muted); }
+.dock .row button .ico { width: 21px; height: 21px; color: var(--muted); }
+.dock .row button:hover { background: var(--surface-2); transform: none; color: var(--ink); }
+.dock .row button:hover .ico { color: var(--ink); }
+.dock .row button.on { background: var(--accent-soft); color: var(--amber); }
+.dock .row button.on .ico { color: var(--accent); }
+
+/* place / town card */
+.towncard { width: min(400px, calc(100% - 24px)); bottom: calc(136px + var(--safe-b)); padding: 12px 16px 14px; border-radius: var(--r-lg);
+  background: var(--surface); border: 1px solid var(--line); box-shadow: var(--sh-2); font-size: 13.5px; color: var(--muted); }
+.towncard b { font-size: 16px; color: var(--ink); letter-spacing: -0.01em; }
+.towncard .next { color: var(--amber); }
+.towncard summary { color: var(--muted); font-size: 12.5px; }
+.cardbtns { gap: 6px; margin-top: 8px; }
+.grow { height: 34px; padding: 0 14px; border-radius: 999px; background: var(--ink); color: #fff; font: 600 13px var(--ui); box-shadow: none; }
+.grow:hover { filter: none; background: #2a3442; transform: translateY(-1px); }
+.grow.alt { background: var(--accent); }
+.grow.alt:hover { background: var(--accent-dark); }
+.grow.ghost { background: var(--surface-2); color: var(--ink); }
+.grow.ghost:hover { background: #e7e9ed; }
+.towncard a { color: var(--accent-dark); font-size: 13px; }
+.steps span { background: var(--surface-2); font-size: 12px; }
+.steps span.done { background: #e3f4e6; color: #1f6b30; }
+
+/* sheets, modals, forms */
+.sheet { background: #fff; border: 1px solid var(--line); box-shadow: var(--sh-2); border-radius: var(--r-lg); padding: 20px 20px 22px; }
+.sheet::before { background: #e3e5e9; }
+.sheet h2 { font: 700 21px var(--ui); letter-spacing: -0.015em; color: var(--ink); }
+.x { background: var(--surface-2); color: var(--muted); }
+.x:hover { background: #e7e9ed; color: var(--ink); }
+.field { border: 1px solid #d6dae1; border-radius: var(--r-sm); font-size: 15px; padding: 12px 14px; transition: border-color .15s, box-shadow .15s; }
+.field:focus { border-color: var(--accent); box-shadow: 0 0 0 4px rgba(242, 138, 18, .14); }
+.sheet .primary, .modal .primary { height: 46px; padding: 0 16px; border-radius: var(--r-md); background: var(--accent); font: 600 16px var(--ui); }
+.sheet .primary:hover, .modal .primary:hover { background: var(--accent-dark); }
+.suggest { border-color: var(--line); }
+.suggest li:hover, .suggest li.on { background: var(--accent-soft); }
+.list li.click:hover { background: var(--surface-2); }
+.modal { background: rgba(12, 18, 28, .5); }
+.modal .box { background: #fff; border: 0; border-radius: 22px; box-shadow: var(--sh-2); padding: 26px 22px 20px; }
+.modal h1 { font: 700 24px var(--ui); letter-spacing: -0.02em; }
+.choice { border-radius: var(--r-md); padding: 13px 14px; text-align: left; transition: transform .15s var(--ease), box-shadow .15s; }
+.choice:hover { transform: translateY(-1px); box-shadow: var(--sh-1); }
+.choice b { font-size: 16px; }
+.choice.yellow { background: var(--surface-2); color: var(--ink); border: 1px solid var(--line); }
+.choice.orange { background: var(--accent); color: #fff; }
+.tbox { background: #fff; border-radius: 18px; box-shadow: var(--sh-2); }
+.tbox small { color: var(--amber); letter-spacing: .04em; }
+.toast { background: rgba(24, 32, 44, .94); font-size: 14px; }
+
+/* labels on the map */
+.tl, .pl, .hl, .wl { font-family: var(--ui); letter-spacing: -0.005em; }
+.tl { background: rgba(24, 32, 44, .88); border: 0; font-size: 12px; padding: 3px 9px; }
+.tl span { color: #ffc768; }
+.pl { background: rgba(255, 255, 255, .95); border: 1px solid var(--line); color: var(--ink); font-size: 11px; box-shadow: 0 2px 6px rgba(16,24,40,.14); }
+.pl.cur { background: var(--ink); border-color: transparent; color: #fff; }
+.pl.unesco::after { color: var(--accent); }
+.hl { background: rgba(24, 32, 44, .82); font-size: 11px; }
+.cl, .sl, .rl { font-family: var(--ui); }
+
+/* loading screen */
+.loadname { font-family: Fredoka, var(--ui); }
+.loadbar { width: 200px; height: 4px; }
+.loadbar i { background: var(--accent); }
+
+@media (max-width: 480px) {
+  .pill, .top .pill:not(.pop):not(.day):not(.fest), .brandrow .pill { padding: 6px 10px; font-size: 12.5px; }
+  .search { top: 56px; height: 42px; }
+  .dock { padding: 6px; }
+  .toprow .primary, .walkbtn { height: 44px; font-size: 15px; }
+  .towncard { bottom: calc(128px + var(--safe-b)); }
+  .zoom button { width: 38px; height: 38px; }
+}
+@media (max-width: 480px) {
+  /* phones: logo only, compact language picker, so the day and population chips always fit */
+  .brand #brandName { display: none; }
+  .brand { padding: 6px 8px; }
+  .langsel { max-width: 76px; padding: 6px 8px; }
+  .top { left: 8px; right: 8px; top: 8px; gap: 6px; }
+  .stats { gap: 4px; }
+  .search { left: 8px; right: 8px; top: 50px; }
+  .leftbtns { top: 102px; left: 8px; }
+}

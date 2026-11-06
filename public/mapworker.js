@@ -52,6 +52,7 @@ function prepRoad([x1, y1, x2, y2, cls]) {
   const mx = (x1 + x2) / 2 - (y2 - y1) * bend, my = (y1 + y2) / 2 + (x2 - x1) * bend;
   return { x1, y1, x2, y2, mx, my, cls, box: [Math.min(x1, x2, mx), Math.max(x1, x2, mx), Math.min(y1, y2, my), Math.max(y1, y2, my)] };
 }
+const MAP_ROADS = { road: '#8f949a', highway: '#7b8087', edge: 'rgba(236,232,220,0.6)', centreLines: false, centreColour: 'rgba(255,255,255,0.9)' };
 function drawRoads(g, lon0, lon1, lat0, lat1, px) {
   const vis = D.roads.filter((r) => overlaps(r.box, lon0, lon1, lat0, lat1));
   if (!vis.length) return;
@@ -59,9 +60,10 @@ function drawRoads(g, lon0, lon1, lat0, lat1, px) {
   const path = (r) => { const p = new Path2D(); p.moveTo(r.x1, r.y1); p.quadraticCurveTo(r.mx, r.my, r.x2, r.y2); return p; };
   const P = vis.map((r) => [r, path(r)]);
   g.lineCap = g.lineJoin = 'round';
-  for (const [r, p] of P) { g.strokeStyle = 'rgba(120,110,90,0.55)'; g.lineWidth = (r.cls === 2 ? 7.4 : 5.4) * zoom * px; g.stroke(p); }
-  for (const [r, p] of P) { g.strokeStyle = r.cls === 2 ? '#f7c96a' : '#f6f1e4'; g.lineWidth = (r.cls === 2 ? 5.4 : 3.8) * zoom * px; g.stroke(p); }
-  if (zoom > 1.6) { g.setLineDash([6 * px * zoom, 6 * px * zoom]); g.strokeStyle = 'rgba(255,255,255,0.9)'; g.lineWidth = 0.6 * zoom * px; for (const [r, p] of P) if (r.cls === 2) g.stroke(p); g.setLineDash([]); }
+  // clean asphalt with a pale verge, no painted centre lines (MAP_ROADS.centreLines turns them back on)
+  for (const [r, p] of P) { g.strokeStyle = MAP_ROADS.edge; g.lineWidth = (r.cls === 2 ? 4.6 : 3.2) * zoom * px; g.stroke(p); }
+  for (const [r, p] of P) { g.strokeStyle = r.cls === 2 ? MAP_ROADS.highway : MAP_ROADS.road; g.lineWidth = (r.cls === 2 ? 3.2 : 2.2) * zoom * px; g.stroke(p); }
+  if (MAP_ROADS.centreLines && zoom > 1.6) { g.setLineDash([6 * px * zoom, 6 * px * zoom]); g.strokeStyle = MAP_ROADS.centreColour; g.lineWidth = 0.6 * zoom * px; for (const [r, p] of P) if (r.cls === 2) g.stroke(p); g.setLineDash([]); }
 }
 function paint({ lon0, lon1, lat0, lat1 }) {
   const { pal } = D;
@@ -183,7 +185,7 @@ async function vecTile(z, x, y) {
 }
 
 const ROAD = { // class: [width px, fill, soft edge] — simple, toy-map roads
-  motorway: [5, '#f6b94e', 'rgba(150,110,50,0.35)'], trunk: [4.2, '#ffd36b', 'rgba(150,120,60,0.3)'], primary: [3.6, '#ffffff', 'rgba(90,100,80,0.28)'],
+  motorway: [5, '#7b8087', 'rgba(236,232,220,0.6)'], trunk: [4.2, '#858a90', 'rgba(236,232,220,0.5)'], primary: [3.6, '#ffffff', 'rgba(90,100,80,0.28)'],
   secondary: [3, '#ffffff', 'rgba(90,100,80,0.22)'], tertiary: [2.4, '#fbfaf5', null], minor: [1.5, 'rgba(255,255,255,0.85)', null], rail: [1.3, '#9a9aa2', null],
 };
 async function paintReal(req, base) {

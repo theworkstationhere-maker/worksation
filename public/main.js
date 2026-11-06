@@ -276,7 +276,7 @@ async function buildEarthTexture() {
   paintDetail(g, pathFor, green, W, H, await geoP);
   { // the road network (highways only at this scale; every road appears on the close-up map)
     const roads = await fetch('/roads.json').then((r) => r.json()).catch(() => []);
-    g.lineCap = 'round'; g.strokeStyle = 'rgba(250,236,200,0.75)'; g.lineWidth = 1.6;
+    g.lineCap = 'round'; g.strokeStyle = 'rgba(120,124,130,0.55)'; g.lineWidth = 1.5;
     for (const [x1, y1, x2, y2, cls] of roads) {
       if (cls !== 2 || Math.abs(x2 - x1) > 90) continue;
       const h = hash(x1 + ',' + y1 + ',' + x2), bend = ((h & 1023) / 1023 - 0.5) * 0.35;
@@ -730,8 +730,7 @@ function showTownCard() {
       <p class="small">${tr('growNote')}</p>
     </details>
     ${active.focusId && active.focusId === myId() ? `<div class="cardbtns"><button class="grow alt" id="customBtn" type="button">${esc(tr('customise'))}</button></div>` : ''}
-    <div class="cardbtns"><button class="grow" id="growBtn" type="button">${tr('watchGrow')}</button><button class="grow alt" id="cardWalk" type="button">${tr('walkHere')}</button><button class="grow ghost" id="cardShare" type="button">${tr('invite')}</button></div>
-    <div class="cardbtns"><button class="grow ghost" id="townDio" type="button">🏝️ Diorama</button></div>`;
+    <div class="cardbtns"><button class="grow" id="growBtn" type="button">${tr('watchGrow')}</button><button class="grow alt" id="cardWalk" type="button">${tr('walkHere')}</button><button class="grow ghost" id="cardShare" type="button">${tr('invite')}</button><button class="grow ghost" id="townDio" type="button" title="Diorama">🏝️</button></div>`;
   $('#cardShare').onclick = () => shareTown(active.town);
   $('#growBtn').onclick = startReplay;
   $('#townDio').onclick = townDiorama;
@@ -1305,22 +1304,36 @@ async function buildGeoOverlays() {
     }
   }
   // real-looking terrain massifs (ridges, valleys, rock and snow) instead of cones; a few shapes reused by instancing
-  const VAR = [0, 1, 2, 3].map((k) => ({ green: mountainGeometry({ seed: 11 + k, snow: 0, peaks: 3, grid: 36 }), snowy: mountainGeometry({ seed: 21 + k, snow: 0.38, peaks: 3, grid: 36 }) }));
-  const pick = spots.map(([lat, lon, r, alat]) => ({ v: Math.floor(r * 97) % 4, snowy: (r > 0.6 && alat > 27) || alat > 48 }));
+  // natural massifs (6 shapes, each stretched and turned differently) with soft green foothills around them
+  const NV = 6;
+  const VAR = Array.from({ length: NV }, (_, k) => ({ green: mountainGeometry({ seed: 11 + k, snow: 0, peaks: 2 + (k % 3), grid: 14 }), snowy: mountainGeometry({ seed: 21 + k, snow: 0.36, peaks: 2 + (k % 3), grid: 14 }) }));
+  const HILLG = mountainGeometry({ seed: 77, hill: true, grid: 6 });
+  const pick = spots.map(([lat, lon, r, alat]) => ({ v: Math.floor(r * 997) % NV, snowy: (r > 0.6 && alat > 27) || alat > 48 }));
   const meshes = [];
-  for (let v = 0; v < 4; v++) for (const sn of [false, true]) {
+  const up = new THREE.Vector3(0, 1, 0), m4 = new THREE.Matrix4(), qq = new THREE.Quaternion(), col = new THREE.Color();
+  for (let v = 0; v < NV; v++) for (const sn of [false, true]) {
     const list = spots.map((s, i) => [s, pick[i]]).filter(([, k]) => k.v === v && k.snowy === sn);
     if (!list.length) continue;
     const im = new THREE.InstancedMesh(sn ? VAR[v].snowy : VAR[v].green, terrainMaterial, list.length);
-    const up = new THREE.Vector3(0, 1, 0), m = new THREE.Matrix4(), q = new THREE.Quaternion(), col = new THREE.Color();
     list.forEach(([[lat, lon, r]], i) => {
-      const n = ll2v(lat, lon).normalize();
-      const rad = km(12 + r * 22), h = km(4 + r * 12);
-      q.setFromUnitVectors(up, n).multiply(new THREE.Quaternion().setFromAxisAngle(up, r * 6));
-      m.compose(n.clone().multiplyScalar(1 - km(0.6)), q, new THREE.Vector3(rad, h, rad));
-      im.setMatrixAt(i, m); im.setColorAt(i, col.setScalar(0.88 + (r * 7 % 1) * 0.2));
+      const nn = ll2v(lat, lon).normalize(), rad = km(12 + r * 22), h = km(3.5 + r * 11), stretch = 1 + ((r * 13) % 1) * 0.8;
+      qq.setFromUnitVectors(up, nn).multiply(new THREE.Quaternion().setFromAxisAngle(up, r * 41));
+      m4.compose(nn.clone().multiplyScalar(1 - km(0.4)), qq, new THREE.Vector3(rad * stretch, h, rad / Math.sqrt(stretch)));
+      im.setMatrixAt(i, m4); im.setColorAt(i, col.setScalar(0.92 + ((r * 7) % 1) * 0.14));
     });
     im.frustumCulled = false; meshes.push(im);
+  }
+  { // foothills: low rolling green hills scattered around every range
+    const fs = spots.filter((_, i) => i % 2 === 0); // every other range spot gets a foothill
+    const fh = new THREE.InstancedMesh(HILLG, terrainMaterial, Math.max(1, fs.length));
+    fs.forEach(([lat, lon, r], i) => {
+      const a = r * 97, d = 0.12 + ((r * 31) % 1) * 0.18, la = lat + Math.sin(a) * d, lo = lon + Math.cos(a) * d / Math.max(0.3, Math.cos((lat * Math.PI) / 180));
+      const nn = ll2v(la, lo).normalize(), rad = km(9 + ((r * 17) % 1) * 10);
+      qq.setFromUnitVectors(up, nn).multiply(new THREE.Quaternion().setFromAxisAngle(up, r * 23));
+      fh.setMatrixAt(i, m4.compose(nn.clone().multiplyScalar(1 - km(0.3)), qq, new THREE.Vector3(rad * 1.4, km(1.2 + ((r * 5) % 1) * 1.6), rad)));
+      fh.setColorAt(i, col.setScalar(0.95 + ((r * 3) % 1) * 0.1));
+    });
+    fh.frustumCulled = false; meshes.push(fh);
   }
   GEO.hills = new THREE.Group(); GEO.hills.add(...meshes);
   GEO.snow = new THREE.Group(); // snow is part of the terrain colours now
@@ -1330,7 +1343,7 @@ async function buildGeoOverlays() {
   if (geo.cities) buildCities(geo.cities, rand);
 
   // drifting clouds
-  const up = new THREE.Vector3(0, 1, 0), m = new THREE.Matrix4(), q = new THREE.Quaternion();
+  const m = new THREE.Matrix4(), q = new THREE.Quaternion();
   const puffs = [];
   for (let k = 0; k < 5; k++) puffs.push(new THREE.IcosahedronGeometry(0.5 + (k % 3) * 0.18, 1).translate((k - 2) * 0.55, (k % 2) * 0.15, (k % 3 - 1) * 0.25));
   const cloudG = mergeGeometries(puffs.map((p) => p.toNonIndexed()));

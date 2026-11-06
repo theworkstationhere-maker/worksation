@@ -971,14 +971,15 @@ function mountain(g, ctx, volcano) {
   const snowLine = 5000 - 60 * Math.max(0, Math.abs(p.lat) - 20);
   const e = p.e || 0, snow = e > snowLine ? Math.min(0.6, Math.max(0.14, 1 - snowLine / e)) : 0;
   ctx.noPad = true;
-  if (H < 0.2) {  // a hill: grassy mound with a few trees
+  if (H < 0.2) {  // a hill: soft grassy rise with a few trees
     if (ctx.forMap) return;
-    P(g, UD(12), ctx.pick(['#6f9a4a', '#7fa856', '#8a9a5a']), 0, 0, 0, H * 3.2, H, H * 2.6);
+    P(g, mountainGeometry({ seed: ctx.seed, hill: true, grid: 24 }), '#ffffff', 0, 0, 0, H * 3.2, H, H * 2.6, r() * 6, { vertexColors: true, flatShading: false });
     trees(g, ctx, 10, H * 0.6, H * 2.8, 1.4);
     return;
   }
   // real terrain: ridges and valleys, meadow → forest → rock → snow by height
-  P(g, mountainGeometry({ seed: ctx.seed, snow, volcano, peaks: volcano ? 1 : 3 }), '#ffffff', 0, 0, 0, R, H, R, r() * 6, { vertexColors: true });
+  P(g, mountainGeometry({ seed: ctx.seed, snow, volcano, peaks: volcano ? 1 : 2 + (ctx.seed % 3) }), '#ffffff', 0, 0, 0, R * (0.9 + r() * 0.4), H, R * (0.8 + r() * 0.4), r() * 6, { vertexColors: true, flatShading: false });
+  if (!volcano) for (let i = 0; i < 3; i++) { const a = r() * 6.28, d = R * (0.75 + r() * 0.3); P(g, mountainGeometry({ seed: ctx.seed + 7 + i, hill: true, grid: 24 }), '#ffffff', Math.cos(a) * d, 0, Math.sin(a) * d, R * 0.45, H * (0.12 + r() * 0.1), R * 0.4, r() * 6, { vertexColors: true, flatShading: false }); } // foothills
   if (volcano && r() < 0.5) for (let i = 0; i < 4; i++) sp(g, R * (0.06 + i * 0.025), '#e8e8ea', i * R * 0.05, H * 0.95 + R * (0.05 + i * 0.07), i * R * 0.02, 7, { transparent: true, opacity: 0.55, depthWrite: false });
   if (ctx.forMap) return;
   for (let i = 0; i < 18; i++) { const a = r() * Math.PI * 2, d = R * (0.85 + r() * 0.25); P(g, UK(6), '#2f5d34', Math.cos(a) * d, 0, Math.sin(a) * d, H * 0.035, H * 0.1, H * 0.035); }

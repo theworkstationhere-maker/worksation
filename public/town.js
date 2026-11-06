@@ -6,6 +6,9 @@ import { regionOf } from './placegen.js';
 import { addWind } from './wind.js';
 
 export const SPACING = 0.14;
+// Road look, in one place. Centre lines are off: clean asphalt with pale edges and sidewalks, like a quiet
+// residential street. Set centreLines: true (and pick a colour) to paint dashed lines again.
+export const ROAD_STYLE = { asphalt: '#5d6168', edge: '#e9e4d8', centreLines: false, centreColour: '#f2f2ee' };
 export const ROAD_EVERY = 5;
 export const CONSTRUCT_MS = 5 * 60 * 1000; // "your house is built within 5 minutes"
 const DAY = 86400000;
@@ -559,8 +562,8 @@ export function buildTown(data, milestones, clockOffset = 0) {
   // each street: grass verge | pale sidewalk | light curb | road
   const SIDEWALK = 0.017;
   const walks = new THREE.InstancedMesh(plane, flat('#ddd6c6', 1), lines.length * 2);
-  const curbs = new THREE.InstancedMesh(plane, flat('#f1ece0', 1.5), lines.length * 2);
-  const roads = new THREE.InstancedMesh(plane, flat('#5f646b', 2), lines.length * 2);
+  const curbs = new THREE.InstancedMesh(plane, flat(ROAD_STYLE.edge, 1.5), lines.length * 2);
+  const roads = new THREE.InstancedMesh(plane, flat(ROAD_STYLE.asphalt, 2), lines.length * 2);
   lines.forEach(([c, half], i) => {
     const w = roadW(c);
     walks.setMatrixAt(i * 2, _m.compose(_p.set(c, 0.0029, 0), _q.identity(), _s.set(w + SIDEWALK * 2, 1, half * 2)));
@@ -574,13 +577,13 @@ export function buildTown(data, milestones, clockOffset = 0) {
   const dashes = [];
   const DASH_R = 2.5; // km: dashed lines near the centre, one long line further out (keeps huge towns light)
   const solid = [];
-  for (const [c, half] of lines) {
+  if (ROAD_STYLE.centreLines) for (const [c, half] of lines) {
     if (Math.abs(c) < 1e-6) continue;
     const lim = Math.abs(c) < DASH_R ? Math.min(half, DASH_R) : 0;
     for (let t = -lim + 0.01; t < lim - 0.01; t += 0.032) { dashes.push([c, t, true], [t, c, false]); }
     if (half > lim + 0.01) for (const sgn of [-1, 1]) { const a = lim, b = half, mid = sgn * (a + b) / 2, len = b - a; solid.push([c, mid, len, true], [mid, c, len, false]); }
   }
-  const marks = new THREE.InstancedMesh(plane, flat('#f2ead6', 4), Math.max(1, dashes.length + solid.length));
+  const marks = new THREE.InstancedMesh(plane, flat(ROAD_STYLE.centreColour, 4), Math.max(1, dashes.length + solid.length));
   dashes.forEach(([a, b, v], i) => marks.setMatrixAt(i, _m.compose(_p.set(a, 0.0034, b), _q.identity(), v ? _s.set(0.0028, 1, 0.016) : _s.set(0.016, 1, 0.0028))));
   solid.forEach(([a, b, len, v], j) => marks.setMatrixAt(dashes.length + j, _m.compose(_p.set(a, 0.0034, b), _q.identity(), v ? _s.set(0.0024, 1, len) : _s.set(len, 1, 0.0024))));
   marks.count = dashes.length + solid.length;
