@@ -1,0 +1,28 @@
+# One-click hosting on Render (https://render.com): New → Blueprint → pick this repository.
+# SQLite lives on a persistent disk, so houses and accounts survive restarts and redeploys.
+services:
+  - type: web
+    name: world-again
+    runtime: node
+    plan: starter            # the free plan has no persistent disk, so the database would be wiped on every deploy
+    region: singapore        # closest to India; change if most visitors are elsewhere
+    buildCommand: "true"     # no dependencies to install
+    startCommand: node server.js
+    healthCheckPath: /api/config
+    envVars:
+      - key: NODE_ENV
+        value: production
+      - key: NODE_VERSION
+        value: 22.13.0
+      - key: TRUST_PROXY
+        value: "true"        # Render's proxy adds the visitor's IP to X-Forwarded-For (one house per connection)
+      - key: DATA_DIR
+        value: /var/data
+      - key: ADMIN_TOKEN
+        generateValue: true  # copy it from the Render dashboard to open /admin
+      # - key: ACCESS_GATE   # uncomment (value "1") for a private preview behind an access code
+      #   value: "1"
+    disk:
+      name: world-data
+      mountPath: /var/data
+      sizeGB: 1

@@ -1,0 +1,27 @@
+{
+  "name": "World Again",
+  "tagline": "Rebuilding Earth from scratch, with you.",
+  "instagram": "worldagain.live",
+  "launchDate": "2026-11-05",
+  "port": 5180,
+  "registerPerHourPerIp": 20,
+  "milestones": [
+    {
+      "id": "busStop",
+      "name": "Bus stop",
+      "at": 50
+    },
+    {
+      "id": "station",
+      "name": "Railway station",
+      "at": 200
+    },
+    {
+      "id": "airport",
+      "name": "Airport",
+      "at": 1000
+    }
+  ],
+  "maxHousesPerIp": 1,
+  "trustProxy": false
+}

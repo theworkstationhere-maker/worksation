@@ -1,0 +1,129 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,viewport-fit=cover">
+  <title>World Again</title>
+  <meta name="description" content="Rebuilding Earth from scratch, together. Get a free house in your own town.">
+  <meta name="theme-color" content="#0b1d3a">
+  <link rel="icon" href="/favicon.svg" type="image/svg+xml">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Fredoka:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="/style.css">
+  <script type="importmap">
+  {
+    "imports": {
+      "three": "https://cdn.jsdelivr.net/npm/three@0.160.0/build/three.module.js",
+      "three/addons/": "https://cdn.jsdelivr.net/npm/three@0.160.0/examples/jsm/",
+      "topojson-client": "https://cdn.jsdelivr.net/npm/topojson-client@3.1.0/+esm"
+    }
+  }
+  </script>
+</head>
+<body>
+  <svg width="0" height="0" style="position:absolute" aria-hidden="true">
+    <defs>
+      <symbol id="i-ideas" viewBox="0 0 24 24"><path d="M9 18h6M10 21h4M12 3a6 6 0 0 0-4 10.5c.8.8 1 1.5 1 2.5h6c0-1 .2-1.7 1-2.5A6 6 0 0 0 12 3z"/></symbol>
+      <symbol id="i-towns" viewBox="0 0 24 24"><path d="M3 21h18M5 21V9l5-3v15M10 21V4l6 3v14M16 21v-9l3 2v7M7 12h1M7 15h1M12 9h1M12 12h1M12 15h1"/></symbol>
+      <symbol id="i-visit" viewBox="0 0 24 24"><path d="M3 21h18M4 10h16M12 3l8 5H4l8-5zM6 10v8M10 10v8M14 10v8M18 10v8M4 18h16"/></symbol>
+      <symbol id="i-today" viewBox="0 0 24 24"><rect x="3" y="5" width="18" height="16" rx="3"/><path d="M3 10h18M8 3v4M16 3v4M8 14h3"/></symbol>
+      <symbol id="i-race" viewBox="0 0 24 24"><path d="M8 21h8M12 17v4M7 4h10v5a5 5 0 0 1-10 0V4zM17 6h3v2a3 3 0 0 1-3 3M7 6H4v2a3 3 0 0 0 3 3"/></symbol>
+      <symbol id="i-walk" viewBox="0 0 24 24"><circle cx="13" cy="4" r="2"/><path d="M10 21l2-6-3-3 1-4 4 2 3 3M9 12l-2 3M14 15l2 6"/></symbol>
+      <symbol id="i-home" viewBox="0 0 24 24"><path d="M3 11l9-7 9 7M5 10v10h5v-6h4v6h5V10"/></symbol>
+      <symbol id="i-globe" viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><path d="M3 12h18M12 3a14 14 0 0 1 0 18M12 3a14 14 0 0 0 0 18"/></symbol>
+    </defs>
+  </svg>
+  <div id="stage"></div>
+
+  <header class="top">
+    <div class="brandrow"><div class="brand pill"><img src="/favicon.svg" alt="" width="24" height="24"><span id="brandName">World Again</span></div><select class="pill langsel" id="langSel" aria-label="Language"></select></div>
+    <div class="stats">
+      <span class="pill day" id="day">DAY 1</span>
+      <span class="pill pop" id="pop">Population 0</span>
+      <div class="break"></div>
+      <button class="pill small-pill" id="nightBtn" type="button" data-i18n="night">Night</button>
+      <div class="break"></div>
+      <button class="pill small-pill fest hidden" id="festBtn" type="button"></button>
+    </div>
+  </header>
+
+  <form class="search" id="findForm" autocomplete="off">
+    <svg viewBox="0 0 24 24" width="20" height="20" aria-hidden="true"><circle cx="11" cy="11" r="7" fill="none" stroke="currentColor" stroke-width="2.5"/><path d="M20 20l-4-4" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"/></svg>
+    <input id="findInput" placeholder="Find your house, a town or a place" data-i18n-ph="search" autocapitalize="none" spellcheck="false" enterkeyhint="search">
+  </form>
+
+  <div class="leftbtns">
+    <button class="pill back hidden" id="backBtn" type="button" data-i18n="seeEarth">See the whole Earth</button>
+    <button class="pill hidden" id="myHouseBtn" type="button"><svg class="ico sm"><use href="#i-home"/></svg><span>Log in</span></button>
+  </div>
+
+  <div class="zoom">
+    <button id="zin" type="button" aria-label="Zoom in">+</button>
+    <button id="zout" type="button" aria-label="Zoom out">−</button>
+    <button id="rotL" type="button" aria-label="Turn left" title="Hold to turn">⟲</button>
+    <button id="rotR" type="button" aria-label="Turn right" title="Hold to turn">⟳</button>
+    <button id="tiltBtn" type="button" aria-label="Flat or 3D view" title="Flat map or 3D view">2D</button>
+    <div id="viewPad" title="Drag to turn and tilt · tap to face north" aria-label="Turn and tilt the view"><i></i><b>N</b></div>
+  </div>
+
+  <div id="townCard" class="towncard hidden"></div>
+  <div id="replayBar" class="replay hidden"></div>
+
+  <nav class="dock">
+    <div class="toprow">
+      <button class="primary" id="regBtn" type="button"><svg class="ico"><use href="#i-home"/></svg><span data-i18n="register">Register your house</span></button>
+      <button class="walkbtn" id="walkBtn" type="button"><svg class="ico"><use href="#i-walk"/></svg><span data-i18n="walk">Walk</span></button>
+    </div>
+    <div class="row">
+      <button type="button" data-panel="ideas"><svg class="ico"><use href="#i-ideas"/></svg><span data-i18n="ideas">Ideas</span></button>
+      <button type="button" data-panel="towns"><svg class="ico"><use href="#i-towns"/></svg><span data-i18n="towns">Towns</span></button>
+      <button type="button" data-panel="visit"><svg class="ico"><use href="#i-visit"/></svg><span data-i18n="visit">Visit</span></button>
+      <button type="button" data-panel="today"><svg class="ico"><use href="#i-today"/></svg><span data-i18n="today">Today</span></button>
+      <button type="button" data-panel="race"><svg class="ico"><use href="#i-race"/></svg><span data-i18n="race">Race</span></button>
+    </div>
+  </nav>
+
+  <section class="sheet hidden" id="sheet" role="dialog">
+    <button class="x" id="sheetX" type="button" aria-label="Close">×</button>
+    <div id="sheetBody"></div>
+  </section>
+
+  <div class="modal hidden" id="welcome">
+    <div class="box">
+      <h1><span data-i18n="welcome">Welcome to</span> <span class="js-name">World Again</span></h1>
+      <p class="muted" data-i18n="welcomeText">The whole Earth is empty. Every person gets the same house, in their own town, with their Instagram ID on it.</p>
+      <button class="choice yellow" id="wFind" type="button"><b data-i18n="alreadyT2">Already have a house?</b><span data-i18n="alreadyS2">Log in with your email</span></button>
+      <button class="choice orange" id="wReg" type="button"><b data-i18n="newT">New here?</b><span data-i18n="newS">Register. Your house is built right away.</span></button>
+      <button class="link" id="wLook" type="button" data-i18n="justLook">Just look around</button>
+      <p class="small" data-i18n="free2">Free forever. No money needed.</p>
+    </div>
+  </div>
+
+  <div id="walkUI">
+    <div class="wtop">
+      <button class="pill" id="walkBack" type="button" data-i18n="back">← Back outside</button>
+      <span class="pill people"><i></i><span id="walkPeople">1 person here now</span></span>
+      <button class="pill" id="walkPhoto" type="button" data-i18n="photo">📷 Photo</button>
+      <button class="pill" id="walkSound" type="button">🔇 Sound off</button>
+    </div>
+    <div class="wtitle" id="walkTitle"></div>
+    <div id="joy"><i></i></div>
+    <div class="whint" data-i18n="walkHint">Arrow keys or WASD to walk · Shift to run</div>
+  </div>
+
+  <div class="tour hidden" id="tour"><div class="tbox"><small id="tourStep">1 of 3</small><h3 id="tourTitle"></h3><p id="tourText"></p>
+    <div class="tbtns"><button class="link" id="tourSkip" type="button" data-i18n="skip">Skip</button><button class="primary small" id="tourNext" type="button">Next</button></div></div></div>
+
+  <div id="toast" class="toast hidden"></div>
+  <div id="loading">
+    <div class="loadglobe"><img src="/favicon.svg" alt=""></div>
+    <div class="loadname">World Again</div>
+    <div class="loadtag">Rebuilding Earth, together</div>
+    <div class="loadbar"><i id="loadFill"></i></div>
+    <div class="loadstep" id="loadStep">Drawing the coastlines…</div>
+  </div>
+
+  <script type="module" src="/main.js"></script>
+</body>
+</html>

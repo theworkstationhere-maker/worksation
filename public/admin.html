@@ -1,0 +1,162 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<meta name="robots" content="noindex, nofollow">
+<title>Admin · World Again</title>
+<link href="https://fonts.googleapis.com/css2?family=Fredoka:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+  :root { --ink: #1c2433; --muted: #5e6472; --line: #e7e3da; --bg: #f6f3ec; --card: #fff; --accent: #f7931e; --brown: #5b2e0e; --bad: #c0392b; }
+  * { box-sizing: border-box; }
+  body { margin: 0; font-family: Fredoka, system-ui, sans-serif; background: var(--bg); color: var(--ink); }
+  header { display: flex; align-items: center; justify-content: space-between; gap: 12px; padding: 16px 20px; background: var(--brown); color: #fff; flex-wrap: wrap; }
+  header h1 { margin: 0; font-size: 20px; }
+  main { max-width: 1100px; margin: 0 auto; padding: 20px 16px 60px; }
+  .tiles { display: grid; grid-template-columns: repeat(auto-fit, minmax(160px, 1fr)); gap: 12px; }
+  .tile { background: var(--card); border-radius: 16px; padding: 16px; box-shadow: 0 1px 3px #0001; }
+  .tile b { display: block; font-size: 30px; font-weight: 700; }
+  .tile span { color: var(--muted); font-size: 14px; }
+  .card { background: var(--card); border-radius: 16px; padding: 18px; margin-top: 16px; box-shadow: 0 1px 3px #0001; }
+  .card h2 { margin: 0 0 4px; font-size: 18px; }
+  .sub { color: var(--muted); font-size: 13px; margin: 0 0 12px; }
+  .grid2 { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
+  @media (max-width: 760px) { .grid2 { grid-template-columns: 1fr; } }
+  table { width: 100%; border-collapse: collapse; font-size: 14px; }
+  th { text-align: left; color: var(--muted); font-weight: 600; padding: 8px 6px; border-bottom: 1px solid var(--line); }
+  td { padding: 8px 6px; border-bottom: 1px solid var(--line); }
+  tr.removed td { color: #aaa; text-decoration: line-through; }
+  button, input { font: inherit; }
+  .btn { border: 0; border-radius: 10px; padding: 7px 12px; background: #eef1f6; font-weight: 600; cursor: pointer; }
+  .btn.danger { background: #fde8e6; color: var(--bad); }
+  .btn.primary { background: var(--accent); color: #fff; }
+  .search { display: flex; gap: 8px; margin-bottom: 10px; }
+  .search input { flex: 1; padding: 10px 12px; border: 2px solid var(--line); border-radius: 12px; }
+  .chart { position: relative; height: 200px; }
+  .chart svg { width: 100%; height: 100%; display: block; overflow: visible; }
+  .tip { position: absolute; pointer-events: none; background: var(--ink); color: #fff; padding: 6px 10px; border-radius: 8px; font-size: 13px; transform: translate(-50%, -110%); white-space: nowrap; display: none; }
+  .login { max-width: 380px; margin: 80px auto; background: #fff; padding: 24px; border-radius: 18px; text-align: center; }
+  .login input { width: 100%; padding: 12px; margin: 12px 0; border: 2px solid var(--line); border-radius: 12px; }
+  .hidden { display: none !important; }
+  .scroll { max-height: 420px; overflow: auto; }
+  .rk { color: var(--muted); width: 28px; }
+</style>
+</head>
+<body>
+<div class="login" id="login">
+  <h2>World Again admin</h2>
+  <p class="sub">Paste the admin token (data/admin-token.txt on the server, or the ADMIN_TOKEN setting).</p>
+  <form id="loginForm"><input id="token" type="password" placeholder="Admin token" autocomplete="off"><button class="btn primary" style="width:100%">Open dashboard</button></form>
+  <p class="sub" id="loginErr"></p>
+</div>
+
+<div id="app" class="hidden">
+  <header><h1>🌍 World Again · Admin</h1><div><button class="btn" id="refresh">Refresh</button> <button class="btn" id="export">Export CSV</button> <button class="btn" id="logout">Lock</button></div></header>
+  <main>
+    <div class="tiles" id="tiles"></div>
+    <div class="card">
+      <h2>Sign-ups per hour</h2><p class="sub">Last 48 hours, local time. Hover a bar for the exact number.</p>
+      <div class="chart" id="chart"><svg id="chartSvg" role="img" aria-label="Sign-ups per hour"></svg><div class="tip" id="tip"></div></div>
+    </div>
+    <div class="card">
+      <h2>Find and moderate an ID</h2><p class="sub">Remove fake or abusive IDs (the house disappears and the ID can't register again). Restore undoes it.
+      <b>Verify</b>: check the account's code is in their Instagram bio or DM, then mark it ✓. <b>Reset link</b>: a 24-hour password link to DM to the owner.</p>
+      <form class="search" id="searchForm"><input id="q" placeholder="Instagram ID (start of it is enough)" autocapitalize="none"><button class="btn primary">Search</button></form>
+      <div class="scroll"><table><thead><tr><th>ID</th><th>Town</th><th>Registered</th><th>Account</th><th></th></tr></thead><tbody id="rows"></tbody></table></div>
+    </div>
+    <div class="grid2">
+      <div class="card"><h2>Top countries this week</h2><p class="sub">New houses in the last 7 days</p><table><tbody id="countries"></tbody></table></div>
+      <div class="card"><h2>Top towns this week</h2><p class="sub">New houses in the last 7 days</p><table><tbody id="towns"></tbody></table></div>
+    </div>
+  </main>
+</div>
+
+<script>
+const $ = (s) => document.querySelector(s);
+const esc = (s) => String(s ?? '').replace(/[&<>"']/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
+const fmt = (n) => Number(n).toLocaleString('en');
+let TOKEN = sessionStorage.getItem('wa-admin') || '';
+async function call(path, body) {
+  const r = await fetch(path, { method: body ? 'POST' : 'GET', headers: { 'x-admin-token': TOKEN, ...(body ? { 'content-type': 'application/json' } : {}) }, body: body ? JSON.stringify(body) : undefined });
+  if (r.status === 401) throw new Error('Wrong token');
+  if (!r.ok) throw new Error((await r.json().catch(() => ({}))).error || 'Failed');
+  return r;
+}
+$('#loginForm').onsubmit = async (e) => {
+  e.preventDefault(); TOKEN = $('#token').value.trim();
+  try { await load(); sessionStorage.setItem('wa-admin', TOKEN); } catch (ex) { $('#loginErr').textContent = ex.message; }
+};
+$('#logout').onclick = () => { sessionStorage.removeItem('wa-admin'); location.reload(); };
+$('#refresh').onclick = () => load();
+$('#export').onclick = async () => {
+  const blob = await (await call('/api/admin/export.csv')).blob();
+  const a = document.createElement('a'); a.href = URL.createObjectURL(blob); a.download = 'world-again-houses.csv'; a.click();
+};
+
+function chart(hourly) {
+  const svg = $('#chartSvg'), tip = $('#tip');
+  const W = svg.clientWidth || 800, H = 200, padL = 34, padB = 22, padT = 8;
+  const nowH = Math.floor(Date.now() / 3600000);
+  const map = new Map(hourly.map((r) => [r.h, r.n]));
+  const hours = Array.from({ length: 48 }, (_, i) => nowH - 47 + i).map((h) => ({ h, n: map.get(h) || 0 }));
+  const max = Math.max(1, ...hours.map((x) => x.n));
+  const step = Math.pow(10, Math.floor(Math.log10(max)));
+  const top = Math.ceil(max / step) * step;
+  const bw = (W - padL) / hours.length;
+  const y = (v) => H - padB - ((H - padB - padT) * v) / top;
+  let out = '';
+  for (const t of [0, top / 2, top]) out += `<line x1="${padL}" x2="${W}" y1="${y(t)}" y2="${y(t)}" stroke="#e7e3da"/><text x="${padL - 6}" y="${y(t) + 4}" text-anchor="end" font-size="11" fill="#5e6472">${fmt(Math.round(t))}</text>`;
+  hours.forEach((d, i) => {
+    const x = padL + i * bw + 1, w = Math.max(2, bw - 2), h = Math.max(0, H - padB - y(d.n));
+    const r = Math.min(4, w / 2, h);
+    // bar with a rounded top, anchored to the baseline
+    if (h > 0) out += `<path d="M${x},${H - padB} V${y(d.n) + r} Q${x},${y(d.n)} ${x + r},${y(d.n)} H${x + w - r} Q${x + w},${y(d.n)} ${x + w},${y(d.n) + r} V${H - padB} Z" fill="#f7931e"/>`;
+    out += `<rect class="hit" data-i="${i}" x="${padL + i * bw}" y="${padT}" width="${bw}" height="${H - padB - padT}" fill="transparent"/>`;
+    if (i % 6 === 0) out += `<text x="${x + w / 2}" y="${H - 6}" text-anchor="middle" font-size="11" fill="#5e6472">${new Date(d.h * 3600000).toLocaleTimeString('en', { hour: 'numeric' })}</text>`;
+  });
+  svg.setAttribute('viewBox', `0 0 ${W} ${H}`);
+  svg.innerHTML = out;
+  svg.querySelectorAll('.hit').forEach((el) => {
+    el.onmouseenter = () => {
+      const d = hours[+el.dataset.i];
+      tip.innerHTML = `<b>${fmt(d.n)}</b> sign-ups · ${new Date(d.h * 3600000).toLocaleString('en', { weekday: 'short', hour: 'numeric' })}`;
+      tip.style.left = `${((+el.getAttribute('x') + bw / 2) / W) * 100}%`; tip.style.top = `${y(d.n)}px`; tip.style.display = 'block';
+    };
+    el.onmouseleave = () => (tip.style.display = 'none');
+  });
+}
+function rows(list) {
+  $('#rows').innerHTML = list.map((r) => `<tr class="${r.removed ? 'removed' : ''}"><td><b>@${esc(r.id)}</b>${r.verified ? ' <span title="verified">✓</span>' : ''}</td><td>${esc(r.town)}, ${esc(r.country)}</td><td>${new Date(r.t).toLocaleString('en', { dateStyle: 'medium', timeStyle: 'short' })}</td><td>${r.account ? 'email' : r.claimed ? 'device' : '—'}</td>
+    <td style="white-space:nowrap">${r.removed ? `<button class="btn" data-act="restore" data-id="${esc(r.id)}">Restore</button>` : `<button class="btn danger" data-act="remove" data-id="${esc(r.id)}">Remove</button>`}
+    ${r.account ? `<button class="btn" data-act="code" data-id="${esc(r.id)}">Code</button> <button class="btn" data-act="${r.verified ? 'unverify' : 'verify'}" data-id="${esc(r.id)}">${r.verified ? 'Unverify' : 'Verify ✓'}</button> <button class="btn" data-act="reset-link" data-id="${esc(r.id)}">Reset link</button>` : ''}
+    ${r.claimed && !r.account ? `<button class="btn" data-act="reset-key" data-id="${esc(r.id)}">Reset device</button>` : ''}</td></tr>`).join('') || '<tr><td colspan="5" class="sub">Nothing found</td></tr>';
+}
+$('#rows').onclick = async (e) => {
+  const b = e.target.closest('button[data-act]'); if (!b) return;
+  const id = b.dataset.id, act = b.dataset.act;
+  if (act === 'remove' && !confirm(`Remove @${id}? Their house disappears and the ID can't register again.`)) return;
+  if (act === 'code') { const a = (await (await call('/api/admin/account?id=' + encodeURIComponent(id))).json()).account; alert(a ? `@${id}\nEmail: ${a.email}\nVerification code: ${a.code}\n\nCheck this code is in their Instagram bio or in a DM sent from @${id}.` : 'No account'); return; }
+  if (act === 'reset-link') { const r = await (await call('/api/admin/reset-link', { id })).json(); const link = location.origin + r.url; try { await navigator.clipboard.writeText(link); } catch {} alert(`Password reset link for @${id} (valid 24 h, copied):\n\n${link}\n\nSend it ONLY to the real @${id} on Instagram.`); return; }
+  if (act === 'verify' || act === 'unverify') await call('/api/admin/verify', { id, verified: act === 'verify' });
+  else await call('/api/admin/' + act, { id });
+  $('#q').value ? search() : load();
+};
+async function search() { const r = await (await call('/api/admin/search?q=' + encodeURIComponent($('#q').value))).json(); rows(r.rows); }
+$('#searchForm').onsubmit = (e) => { e.preventDefault(); search(); };
+const flag = (cc) => (cc && /^[a-z]{2}$/i.test(cc) ? String.fromCodePoint(...cc.toUpperCase().split('').map((c) => 127397 + c.charCodeAt(0))) : '🌍');
+async function load() {
+  const d = await (await call('/api/admin/stats')).json();
+  $('#login').classList.add('hidden'); $('#app').classList.remove('hidden');
+  const last24 = d.hourly.filter((r) => r.h > Math.floor(Date.now() / 3600000) - 24).reduce((a, r) => a + r.n, 0);
+  $('#tiles').innerHTML = [[d.population, 'houses'], [last24, 'sign-ups in 24 h'], [d.towns, 'towns'], [d.claimed, 'linked to a device'], [d.removed, 'removed IDs']]
+    .map(([n, l]) => `<div class="tile"><b>${fmt(n)}</b><span>${l}</span></div>`).join('');
+  chart(d.hourly);
+  rows(d.recent);
+  $('#countries').innerHTML = d.race.countries.week.slice(0, 12).map((c, i) => `<tr><td class="rk">${i + 1}</td><td>${flag(c.cc)} ${esc(c.country)}</td><td style="text-align:right"><b>${fmt(c.n)}</b></td></tr>`).join('');
+  $('#towns').innerHTML = d.race.towns.week.slice(0, 12).map((t, i) => `<tr><td class="rk">${i + 1}</td><td>${flag(t.cc)} ${esc(t.name)} <span class="sub">${esc(t.country)}</span></td><td style="text-align:right"><b>${fmt(t.n)}</b></td></tr>`).join('');
+}
+addEventListener('resize', () => { if (!$('#app').classList.contains('hidden')) load(); });
+if (TOKEN) load().catch(() => {});
+</script>
+</body>
+</html>

@@ -1,0 +1,14 @@
+{
+  "name": "world-again",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "start": "node server.js",
+    "seed": "node scripts/seed.js",
+    "import": "node scripts/import.js",
+    "reset": "rm -f data/world.db data/world.db-wal data/world.db-shm data/db.json data/db.json.migrated",
+    "loadtest": "node scripts/loadtest.js"
+  },
+  "engines": { "node": ">=22.13" }
+}
